@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: frio-polar-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: frio_polar
+      POSTGRES_USER: frio_polar
+      POSTGRES_PASSWORD: frio_polar_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U frio_polar -d frio_polar"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: frio-polar-app
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/frio_polar
+      DB_USERNAME: frio_polar
+      DB_PASSWORD: frio_polar_dev
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
