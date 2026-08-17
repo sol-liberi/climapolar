@@ -6,16 +6,25 @@ services:
     environment:
       POSTGRES_DB: frio_polar
       POSTGRES_USER: frio_polar
-      POSTGRES_PASSWORD: frio_polar_dev
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defini DB_PASSWORD en el archivo .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U frio_polar -d frio_polar"]
       interval: 5s
       timeout: 5s
       retries: 12
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: ${DB_MEMORY_LIMIT:-512m}
+    cpus: ${DB_CPU_LIMIT:-1.0}
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   app:
     build:
@@ -25,13 +34,38 @@ services:
     restart: unless-stopped
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/frio_polar
-      DB_USERNAME: frio_polar
-      DB_PASSWORD: frio_polar_dev
+      DB_USERNAME: climapolar_app
+      DB_PASSWORD: ${DB_PASSWORD:?Defini DB_PASSWORD en el archivo .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?Defini ADMIN_USERNAME en el archivo .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defini ADMIN_PASSWORD en el archivo .env}
+      CLIMAPOLAR_SECURITY_TRUSTED_PROXIES: ${CLIMAPOLAR_SECURITY_TRUSTED_PROXIES:-127.0.0.1,::1}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      UPLOAD_DIR: /app/data/media
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError}
     ports:
-      - "8081:8080"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8081}:8080"
+    volumes:
+      - media_data:/app/data/media
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: ${APP_MEMORY_LIMIT:-768m}
+    cpus: ${APP_CPU_LIMIT:-1.0}
+    pids_limit: 256
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       postgres:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  media_data:

@@ -1,1 +1,165 @@
-<!DOCTYPE html><html lang="es" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title th:text="${tituloPagina + ' | FRIO POLAR'}"></title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link rel="stylesheet" th:href="@{/css/styles.css}"></head><body class="admin-page"><header class="admin-header"><div class="container"><a class="brand" th:href="@{/}"><span>FRIO</span> POLAR</a><a th:href="@{/admin/trabajos}">← Volver al listado</a></div></header><main class="container form-page"><span class="eyebrow">PANEL ADMINISTRATIVO</span><h1 th:text="${tituloPagina}"></h1><p>Completá la información que se mostrará en el portfolio.</p><form class="work-form" th:action="@{/admin/trabajos/guardar}" th:object="${trabajo}" method="post"><input type="hidden" th:field="*{id}"><div class="form-grid"><div class="full"><label for="titulo">Título *</label><input id="titulo" class="form-control" th:field="*{titulo}" placeholder="Ej: Instalación Split 4500 frigorías"><small class="field-error" th:errors="*{titulo}"></small></div><div class="full"><label for="descripcion">Descripción *</label><textarea id="descripcion" class="form-control" rows="5" th:field="*{descripcion}" placeholder="Contá brevemente cómo se realizó el trabajo"></textarea><small class="field-error" th:errors="*{descripcion}"></small></div><div><label for="tipo">Tipo de servicio *</label><select id="tipo" class="form-select" th:field="*{tipoServicio}"><option value="">Seleccionar</option><option>Instalación</option><option>Mantenimiento</option><option>Limpieza</option><option>Reparación</option><option>Desinstalación</option><option>Reinstalación</option><option>Diagnóstico técnico</option></select><small class="field-error" th:errors="*{tipoServicio}"></small></div><div><label for="ubicacion">Ubicación *</label><input id="ubicacion" class="form-control" th:field="*{ubicacion}" placeholder="Ej: Villa Devoto"><small class="field-error" th:errors="*{ubicacion}"></small></div><div><label for="fecha">Fecha *</label><input id="fecha" type="date" class="form-control" th:field="*{fecha}"><small class="field-error" th:errors="*{fecha}"></small></div><div class="check-field"><input id="destacado" type="checkbox" th:field="*{destacado}"><label for="destacado">Mostrar como destacado en la página de inicio</label></div><div class="full"><label for="imagen">URL de imagen *</label><input id="imagen" type="url" class="form-control" th:field="*{imagenUrl}" placeholder="https://..."><small class="field-error" th:errors="*{imagenUrl}"></small></div><div class="full"><label for="video">URL de video <span>(opcional)</span></label><input id="video" type="url" class="form-control" th:field="*{videoUrl}" placeholder="https://..."></div></div><div class="form-actions"><a class="btn btn-outline-secondary" th:href="@{/admin/trabajos}">Cancelar</a><button class="btn btn-primary" type="submit">Guardar trabajo</button></div></form></main></body></html>
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${tituloPagina + ' | CLIMA POLAR'}"></title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.8/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260817')}">
+    <link rel="stylesheet" th:href="@{/css/brand.css(v='20260817')}">
+    <link rel="stylesheet" th:href="@{/css/admin.css(v='20260817')}">
+</head>
+<body class="admin-page">
+<header class="admin-header">
+    <div class="container">
+        <a class="brand-logo" th:href="@{/}" aria-label="CLIMA POLAR Refrigeración - Inicio"><img th:src="@{/img/logo-clima-polar.jpeg}" width="827" height="422" alt="CLIMA POLAR Refrigeración"></a>
+        <div class="d-flex align-items-center gap-3">
+            <a th:href="@{/admin/trabajos}">← Volver al listado</a>
+            <form class="admin-logout-form" th:action="@{/admin/logout}" method="post">
+                <button class="admin-logout" type="submit">Cerrar sesión</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="container form-page">
+    <span class="eyebrow">PANEL ADMINISTRATIVO</span>
+    <h1 th:text="${tituloPagina}"></h1>
+    <p>Cargá la información y los archivos. La vista previa se actualiza antes de publicar.</p>
+
+    <div class="admin-layout">
+        <form id="workForm" class="work-form" th:action="@{/admin/trabajos/guardar}" th:object="${trabajo}"
+              method="post" enctype="multipart/form-data">
+            <input type="hidden" th:field="*{id}">
+            <input type="hidden" th:field="*{version}">
+
+            <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}">
+                <p class="mb-0" th:each="error : ${#fields.globalErrors()}" th:text="${error}"></p>
+            </div>
+
+            <section class="admin-form-section">
+                <div class="admin-form-section-heading">
+                    <h2>Información del trabajo</h2>
+                    <p>Usá un título claro y una descripción breve de lo realizado.</p>
+                </div>
+                <div class="form-grid">
+                    <div class="full">
+                        <label for="titulo">Título *</label>
+                        <input id="titulo" class="form-control" th:field="*{titulo}" maxlength="160" required placeholder="Ej: Preinstalación de aire acondicionado en obra">
+                        <small class="field-error" th:errors="*{titulo}"></small>
+                    </div>
+
+                    <div class="full">
+                        <label for="descripcion">Descripción *</label>
+                        <textarea id="descripcion" class="form-control" rows="5" th:field="*{descripcion}" maxlength="2000" required placeholder="Contá brevemente qué se hizo y cómo se resolvió"></textarea>
+                        <small class="field-error" th:errors="*{descripcion}"></small>
+                    </div>
+
+                    <div>
+                        <label for="categoria">Tipo de trabajo</label>
+                        <select id="categoria" class="form-select" th:field="*{categoria}">
+                            <option th:each="categoriaItem : ${categorias}"
+                                    th:value="${categoriaItem.codigo}"
+                                    th:text="${categoriaItem.etiqueta}"></option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="ubicacion">Ubicación <span>(opcional)</span></label>
+                        <input id="ubicacion" class="form-control" th:field="*{ubicacion}" maxlength="120" placeholder="Ej: Villa Devoto">
+                        <small class="field-error" th:errors="*{ubicacion}"></small>
+                    </div>
+
+                    <div>
+                        <label for="fecha">Fecha del trabajo *</label>
+                        <input id="fecha" type="date" class="form-control" th:field="*{fecha}" required>
+                        <small class="field-error" th:errors="*{fecha}"></small>
+                    </div>
+
+                    <div class="check-field">
+                        <input id="destacado" type="checkbox" th:field="*{destacado}">
+                        <label for="destacado">Mostrar también en la página de inicio</label>
+                    </div>
+                </div>
+            </section>
+
+            <section class="admin-form-section" th:if="${!#lists.isEmpty(mediosExistentes)}">
+                <div class="admin-form-section-heading">
+                    <h2>Archivos publicados</h2>
+                    <p>Podés marcar fotos o videos para quitarlos al guardar los cambios.</p>
+                </div>
+                <div class="admin-media-grid">
+                    <figure class="existing-media-item" th:each="medio : ${mediosExistentes}"
+                            th:data-media-type="${medio.imagen ? 'imagenes' : 'videos'}">
+                        <div class="existing-media-preview">
+                            <img th:if="${medio.imagen}" th:src="${medio.miniaturaOOriginal}" th:alt="${trabajo.titulo}" loading="lazy">
+                            <video th:if="${medio.video}" controls preload="none" playsinline>
+                                <source th:src="${medio.rutaPublica}" th:type="${medio.contentType}">
+                            </video>
+                        </div>
+                        <figcaption class="existing-media-info">
+                            <strong th:text="${medio.imagen ? 'Fotografía' : 'Video'}"></strong>
+                            <small th:text="${medio.nombreOriginal != null ? medio.nombreOriginal : 'Archivo publicado'}"></small>
+                        </figcaption>
+                        <input type="checkbox" name="mediosAEliminar" th:id="${'remove-media-' + medio.id}" th:value="${medio.id}"
+                               th:checked="${#lists.contains(trabajo.mediosAEliminar, medio.id)}" hidden>
+                        <button class="remove-existing-media" type="button"
+                                th:data-checkbox-id="${'remove-media-' + medio.id}"
+                                data-remove-label="Eliminar" data-restore-label="Deshacer" aria-pressed="false">
+                            <span data-action-label>Eliminar</span>
+                        </button>
+                    </figure>
+                </div>
+            </section>
+
+            <section class="admin-form-section">
+                <div class="admin-form-section-heading">
+                    <h2>Agregar fotos y videos</h2>
+                    <p>Elegí varios archivos a la vez. Las imágenes se optimizan automáticamente.</p>
+                </div>
+                <div class="upload-grid">
+                    <label class="upload-zone" for="imagenes" data-input-id="imagenes">
+                        <strong>Fotografías</strong>
+                        <small id="imagenes-ayuda">JPEG o PNG · hasta 15 MB cada una. Si tu celular guarda HEIC/HEIF, exportá la foto como JPEG antes de subirla.</small>
+                        <input id="imagenes" name="imagenes" type="file" accept="image/jpeg,image/png" multiple
+                               data-max-bytes="15728640" aria-describedby="imagenes-ayuda imagenes-error">
+                        <span id="imagenes-error" class="upload-error" data-upload-error-for="imagenes"
+                              role="status" aria-live="polite" hidden></span>
+                    </label>
+                    <label class="upload-zone" for="videos" data-input-id="videos">
+                        <strong>Videos</strong>
+                        <small id="videos-ayuda">MP4 o WebM · hasta 150 MB cada uno. Los videos MOV de algunos celulares deben exportarse como MP4.</small>
+                        <input id="videos" name="videos" type="file" accept="video/mp4,video/webm" multiple
+                               data-max-bytes="157286400" aria-describedby="videos-ayuda videos-error">
+                        <span id="videos-error" class="upload-error" data-upload-error-for="videos"
+                              role="status" aria-live="polite" hidden></span>
+                    </label>
+                </div>
+                <p class="admin-form-help mt-2">Máximo: 20 fotos, 6 videos y 24 archivos por publicación; el envío completo no debe superar los 180 MB.</p>
+                <div id="newMediaPreview" class="admin-media-grid" hidden></div>
+            </section>
+
+            <div class="form-actions">
+                <a class="btn btn-outline-secondary" th:href="@{/admin/trabajos}">Cancelar</a>
+                <button id="submitWork" class="btn btn-primary" type="submit"
+                        th:data-default-label="${trabajo.id == null ? 'Publicar trabajo' : 'Guardar cambios'}"
+                        data-pending-label="Publicando…"
+                        th:text="${trabajo.id == null ? 'Publicar trabajo' : 'Guardar cambios'}"></button>
+                <span id="submitStatus" class="visually-hidden" role="status" aria-live="polite"></span>
+            </div>
+        </form>
+
+        <aside class="publication-preview" aria-label="Vista previa de la publicación">
+            <div class="publication-preview-header">Vista previa</div>
+            <div class="publication-preview-body">
+                <span id="previewCategory" class="tag">Tipo de trabajo</span>
+                <h3 id="previewTitle">Título del trabajo</h3>
+                <p id="previewDescription">La descripción del trabajo aparecerá acá.</p>
+                <time id="previewDate">Fecha sin definir</time>
+            </div>
+        </aside>
+    </div>
+</main>
+<script th:src="@{/js/admin-trabajo-form.js(v='20260817')}" defer></script>
+</body>
+</html>

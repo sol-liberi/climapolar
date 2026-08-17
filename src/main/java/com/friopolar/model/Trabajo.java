@@ -7,14 +7,23 @@ import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "trabajos")
 public class Trabajo {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    @Column(nullable = false)
+    private long version;
+
     @NotBlank(message = "El título es obligatorio")
+    @Size(max = 255, message = "El título no puede superar los 255 caracteres")
+    @Column(length = 255)
     private String titulo;
 
     @NotBlank(message = "La descripción es obligatoria")
@@ -22,27 +31,33 @@ public class Trabajo {
     @Column(length = 2000)
     private String descripcion;
 
-    @NotBlank(message = "El tipo de servicio es obligatorio")
-    private String tipoServicio;
+    @Column(nullable = false)
+    private String tipoServicio = CategoriaTrabajo.OTROS.getCodigo();
 
-    @NotBlank(message = "La ubicación es obligatoria")
-    private String ubicacion;
+    @Column(nullable = false)
+    private String ubicacion = "";
 
     @NotNull(message = "La fecha es obligatoria")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate fecha;
 
-    @NotBlank(message = "La URL de imagen es obligatoria")
+    // Se mantienen para migrar bases existentes cuya columna imagen_url es NOT NULL.
     @Column(length = 1000)
-    private String imagenUrl;
+    private String imagenUrl = "";
 
     @Column(length = 1000)
     private String videoUrl;
 
     private boolean destacado;
 
+    @OneToMany(mappedBy = "trabajo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orden ASC, id ASC")
+    private List<TrabajoMedia> medios = new ArrayList<>();
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public long getVersion() { return version; }
+    public void setVersion(long version) { this.version = version; }
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
     public String getDescripcion() { return descripcion; }
@@ -59,4 +74,35 @@ public class Trabajo {
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
     public boolean isDestacado() { return destacado; }
     public void setDestacado(boolean destacado) { this.destacado = destacado; }
+    public List<TrabajoMedia> getMedios() { return medios; }
+
+    public void agregarMedio(TrabajoMedia medio) {
+        medio.setTrabajo(this);
+        medios.add(medio);
+    }
+
+    public void quitarMedio(TrabajoMedia medio) {
+        medios.remove(medio);
+        medio.setTrabajo(null);
+    }
+
+    @Transient
+    public CategoriaTrabajo getCategoria() {
+        return CategoriaTrabajo.desdeValorGuardado(tipoServicio);
+    }
+
+    @Transient
+    public TrabajoMedia getPortada() {
+        return medios.isEmpty() ? null : medios.get(0);
+    }
+
+    @Transient
+    public long getCantidadImagenes() {
+        return medios.stream().filter(TrabajoMedia::isImagen).count();
+    }
+
+    @Transient
+    public long getCantidadVideos() {
+        return medios.stream().filter(TrabajoMedia::isVideo).count();
+    }
 }

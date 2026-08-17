@@ -1,1 +1,85 @@
-<!DOCTYPE html><html lang="es" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Administrar trabajos | FRIO POLAR</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link rel="stylesheet" th:href="@{/css/styles.css}"></head><body class="admin-page"><header class="admin-header"><div class="container"><a class="brand" th:href="@{/}"><span>FRIO</span> POLAR</a><a th:href="@{/}" target="_blank">Ver sitio ↗</a></div></header><main class="container admin-main"><div class="admin-title"><div><span class="eyebrow">PANEL ADMINISTRATIVO</span><h1>Trabajos</h1><p>Gestioná el portfolio publicado en el sitio.</p></div><a class="btn btn-primary btn-lg" th:href="@{/admin/trabajos/nuevo}">+ Nuevo trabajo</a></div><div class="alert alert-success" th:if="${mensaje}" th:text="${mensaje}"></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Trabajo</th><th>Servicio</th><th>Ubicación</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead><tbody><tr th:each="trabajo : ${trabajos}"><td><div class="admin-work"><img th:src="${trabajo.imagenUrl}" alt=""><b th:text="${trabajo.titulo}"></b></div></td><td th:text="${trabajo.tipoServicio}"></td><td th:text="${trabajo.ubicacion}"></td><td th:text="${#temporals.format(trabajo.fecha, 'dd/MM/yyyy')}"></td><td><span class="featured" th:if="${trabajo.destacado}">Destacado</span><span th:unless="${trabajo.destacado}">Publicado</span></td><td class="actions"><a th:href="@{/admin/trabajos/editar/{id}(id=${trabajo.id})}">Editar</a><form th:action="@{/admin/trabajos/eliminar/{id}(id=${trabajo.id})}" method="post" onsubmit="return confirm('¿Eliminar este trabajo?')"><button type="submit">Eliminar</button></form></td></tr></tbody></table><div class="empty" th:if="${#lists.isEmpty(trabajos)}">No hay trabajos cargados.</div></div></main></body></html>
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administrar trabajos | CLIMA POLAR</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.8/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260817')}">
+    <link rel="stylesheet" th:href="@{/css/brand.css(v='20260817')}">
+    <link rel="stylesheet" th:href="@{/css/admin.css(v='20260817')}">
+</head>
+<body class="admin-page">
+<header class="admin-header">
+    <div class="container">
+        <a class="brand-logo" th:href="@{/}" aria-label="CLIMA POLAR Refrigeración - Inicio"><img th:src="@{/img/logo-clima-polar.jpeg}" width="827" height="422" alt="CLIMA POLAR Refrigeración"></a>
+        <div class="d-flex align-items-center gap-3">
+            <a th:href="@{/trabajos}" target="_blank" rel="noopener">Ver portfolio ↗</a>
+            <form class="admin-logout-form" th:action="@{/admin/logout}" method="post">
+                <button class="admin-logout" type="submit">Cerrar sesión</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="container admin-main">
+    <div class="admin-title">
+        <div>
+            <span class="eyebrow">PANEL ADMINISTRATIVO</span>
+            <h1>Trabajos</h1>
+            <p>Publicá y gestioná el portfolio sin modificar el código del sitio.</p>
+        </div>
+        <a class="btn btn-primary btn-lg" th:href="@{/admin/trabajos/nuevo}">+ Nuevo trabajo</a>
+    </div>
+
+    <div class="alert alert-success" th:if="${mensaje}" th:text="${mensaje}"></div>
+    <div class="admin-table-wrap">
+        <table class="admin-table admin-table--responsive">
+            <thead>
+            <tr>
+                <th>Trabajo</th>
+                <th>Categoría</th>
+                <th>Fecha</th>
+                <th>Archivos</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="trabajo : ${trabajos}">
+                <td data-label="Trabajo">
+                    <div class="admin-work">
+                        <th:block th:if="${trabajo.portada != null}">
+                            <img th:if="${trabajo.portada.imagen}" th:src="${trabajo.portada.miniaturaOOriginal}" alt="" loading="lazy">
+                            <span th:if="${trabajo.portada.video}" class="admin-thumbnail-fallback" aria-label="El trabajo tiene un video">▶</span>
+                        </th:block>
+                        <span class="admin-thumbnail-fallback" th:if="${trabajo.portada == null}" aria-hidden="true">▧</span>
+                        <b th:text="${trabajo.titulo}"></b>
+                    </div>
+                </td>
+                <td data-label="Categoría" th:text="${trabajo.categoria.etiqueta}"></td>
+                <td data-label="Fecha" th:text="${#temporals.format(trabajo.fecha, 'dd/MM/yyyy')}"></td>
+                <td data-label="Archivos">
+                    <span class="admin-media-summary"
+                          th:text="${trabajo.cantidadImagenes + (trabajo.cantidadImagenes == 1 ? ' foto' : ' fotos') + ' · ' + trabajo.cantidadVideos + (trabajo.cantidadVideos == 1 ? ' video' : ' videos')}"></span>
+                </td>
+                <td data-label="Estado">
+                    <span class="featured" th:if="${trabajo.destacado}">Inicio + portfolio</span>
+                    <span th:unless="${trabajo.destacado}">Portfolio</span>
+                </td>
+                <td class="actions" data-label="Acciones">
+                    <a th:href="@{/admin/trabajos/editar/{id}(id=${trabajo.id})}">Editar</a>
+                    <form th:action="@{/admin/trabajos/eliminar/{id}(id=${trabajo.id})}" method="post"
+                          data-confirm="¿Eliminar este trabajo y sus archivos?">
+                        <button type="submit">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="empty" th:if="${#lists.isEmpty(trabajos)}">No hay trabajos cargados.</div>
+    </div>
+</main>
+<script th:src="@{/js/site.js(v='20260817')}" defer></script>
+</body>
+</html>

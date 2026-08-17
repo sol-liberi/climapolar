@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<article th:fragment="workCard(trabajo)" class="work-card work-feed-card" th:data-work-id="${trabajo.id}">
+    <div class="work-media">
+        <a th:if="${trabajo.portada != null and trabajo.portada.tipo == 'imagen'}"
+           class="work-media-link" th:href="@{/trabajos/{id}(id=${trabajo.id})}" tabindex="-1" aria-hidden="true">
+            <img th:src="${trabajo.portada.miniaturaUrl != null ? trabajo.portada.miniaturaUrl : trabajo.portada.url}"
+                 th:alt="${trabajo.titulo}" loading="lazy" decoding="async">
+        </a>
+        <a th:if="${trabajo.portada != null and trabajo.portada.tipo == 'video'}"
+           class="work-video-cover" th:href="@{/trabajos/{id}(id=${trabajo.id})}"
+           th:aria-label="${'Ver video y detalles de ' + trabajo.titulo}">
+            <span class="work-video-play" aria-hidden="true">▶</span>
+            <span>Ver video</span>
+        </a>
+        <div th:if="${trabajo.portada == null}" class="work-media-fallback" aria-hidden="true">
+            <span class="work-media-fallback-icon">▧</span>
+            <span>Trabajo realizado</span>
+        </div>
+        <span class="media-count" th:if="${trabajo.cantidadImagenes + trabajo.cantidadVideos > 1}"
+              th:text="${trabajo.cantidadImagenes + (trabajo.cantidadImagenes == 1 ? ' foto' : ' fotos') + ' · ' + trabajo.cantidadVideos + (trabajo.cantidadVideos == 1 ? ' video' : ' videos')}"
+              th:aria-label="${'Contenido: ' + trabajo.cantidadImagenes + ' fotos y ' + trabajo.cantidadVideos + ' videos'}"></span>
+    </div>
+    <div class="work-body">
+        <div class="work-card-meta">
+            <span class="tag" th:text="${trabajo.categoria.etiqueta}"></span>
+            <time th:datetime="${trabajo.fecha}" th:text="${#temporals.format(trabajo.fecha, 'dd/MM/yyyy')}"></time>
+        </div>
+        <h3 class="work-title"><a th:href="@{/trabajos/{id}(id=${trabajo.id})}" th:text="${trabajo.titulo}"></a></h3>
+        <p class="work-summary" th:text="${trabajo.descripcion}"></p>
+        <a class="work-detail-link" th:href="@{/trabajos/{id}(id=${trabajo.id})}">Ver trabajo <span aria-hidden="true">→</span></a>
+    </div>
+</article>
+</body>
+</html>

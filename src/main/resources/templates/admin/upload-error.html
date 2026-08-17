@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Archivo demasiado grande | CLIMA POLAR</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.8/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260817')}">
+    <link rel="stylesheet" th:href="@{/css/brand.css(v='20260817')}">
+    <link rel="stylesheet" th:href="@{/css/admin.css(v='20260817')}">
+</head>
+<body class="admin-page admin-login-page">
+<main class="admin-login-card">
+    <a class="brand-logo admin-login-logo" th:href="@{/}" aria-label="CLIMA POLAR Refrigeración - Inicio">
+        <img th:src="@{/img/logo-clima-polar.jpeg}" width="827" height="422" alt="CLIMA POLAR Refrigeración">
+    </a>
+    <span class="eyebrow">NO SE PUDO PUBLICAR</span>
+    <h1>Revisá los archivos</h1>
+    <p th:text="${mensaje}"></p>
+    <a class="btn btn-primary w-100" th:href="@{/admin/trabajos}">Volver a trabajos</a>
+</main>
+</body>
+</html>

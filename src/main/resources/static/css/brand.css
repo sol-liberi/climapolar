@@ -1,0 +1,77 @@
+.brand-logo {
+    position: relative;
+    display: block;
+    flex: 0 0 230px;
+    width: 230px;
+    height: 56px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: #fff;
+}
+
+.brand-logo img {
+    position: absolute;
+    top: -38px;
+    left: -14px;
+    width: 260px;
+    max-width: none;
+    height: auto;
+}
+
+.brand-logo--footer {
+    border-radius: 10px;
+    box-shadow: 0 7px 20px rgba(0, 0, 0, .12);
+}
+
+.admin-header .brand-logo {
+    flex-basis: 205px;
+    width: 205px;
+    height: 50px;
+}
+
+.admin-header .brand-logo img {
+    top: -34px;
+    left: -13px;
+    width: 232px;
+}
+
+.admin-session-link {
+    color: var(--blue) !important;
+    font-weight: 800;
+}
+
+.admin-session-new {
+    white-space: nowrap;
+}
+
+@media (max-width: 991px) {
+    .admin-session-new {
+        width: 100%;
+        margin: .35rem 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .brand-logo {
+        flex-basis: 190px;
+        width: 190px;
+        height: 46px;
+    }
+
+    .brand-logo img {
+        top: -31px;
+        left: -10px;
+        width: 215px;
+    }
+
+    .brand-logo--footer {
+        width: 215px;
+        height: 52px;
+    }
+
+    .brand-logo--footer img {
+        top: -35px;
+        left: -12px;
+        width: 242px;
+    }
+}

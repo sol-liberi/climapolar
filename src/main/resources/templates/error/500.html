@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>No pudimos completar la solicitud | CLIMA POLAR</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.8/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260817')}">
+    <link rel="stylesheet" th:href="@{/css/brand.css(v='20260817')}">
+</head>
+<body>
+<div th:replace="~{fragments :: header}"></div>
+<main class="error-page">
+    <section class="error-card" aria-labelledby="error-title">
+        <span class="error-code" aria-hidden="true">500</span>
+        <span class="eyebrow">ERROR TEMPORAL</span>
+        <h1 id="error-title">No pudimos completar la solicitud</h1>
+        <p>Intentá nuevamente en unos minutos. Si estabas publicando un trabajo, revisá el panel antes de volver a enviarlo.</p>
+        <a class="btn btn-primary btn-lg" th:href="@{/}">Volver al inicio</a>
+    </section>
+</main>
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

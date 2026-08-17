@@ -8,10 +8,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class HomeController {
     private final TrabajoService service;
-    public HomeController(TrabajoService service) { this.service = service; }
+
+    public HomeController(TrabajoService service) {
+        this.service = service;
+    }
+
     @GetMapping("/")
     public String inicio(Model model) {
-        model.addAttribute("trabajos", service.listarDestacados());
+        model.addAttribute("paginaTrabajos", service.listarPagina(null, true, 0, 6));
         return "index";
     }
 }

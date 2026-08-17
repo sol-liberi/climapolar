@@ -1,24 +1,29 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <header th:fragment="header" class="site-header">
     <nav class="navbar navbar-expand-lg navbar-light container py-3">
-        <a class="brand" th:href="@{/}"><span>FRIO</span> POLAR<small>Climatización profesional</small></a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-label="Abrir menú"><span class="navbar-toggler-icon"></span></button>
+        <a class="brand-logo" th:href="@{/}" aria-label="CLIMA POLAR Refrigeración - Inicio"><img th:src="@{/img/logo-clima-polar.jpeg}" width="827" height="422" alt="CLIMA POLAR Refrigeración"></a>
+        <button class="navbar-toggler" type="button" data-menu-toggle aria-controls="menu" aria-expanded="false" aria-label="Abrir menú"><span class="navbar-toggler-icon"></span></button>
         <div class="collapse navbar-collapse" id="menu">
             <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 <a class="nav-link" th:href="@{/}">Inicio</a><a class="nav-link" th:href="@{/#servicios}">Servicios</a>
                 <a class="nav-link" th:href="@{/trabajos}">Trabajos</a><a class="nav-link" th:href="@{/#nosotros}">Nosotros</a>
-                <a class="btn btn-primary ms-lg-2" href="https://wa.me/5491100000000?text=Hola%20FRIO%20POLAR,%20quiero%20pedir%20un%20presupuesto" target="_blank">Pedir presupuesto</a>
+                <a class="nav-link admin-session-link" th:href="@{/admin/trabajos}"
+                   sec:authorize="hasRole('ADMIN')" data-admin-session-link>Panel</a>
+                <a class="btn btn-outline-primary admin-session-new" th:href="@{/admin/trabajos/nuevo}"
+                   sec:authorize="hasRole('ADMIN')" data-admin-session-link>+ Nuevo trabajo</a>
+                <a class="btn btn-primary ms-lg-2" href="https://wa.me/5491169817333?text=Hola%20CLIMA%20POLAR,%20quiero%20pedir%20un%20presupuesto" target="_blank" rel="noopener">Pedir presupuesto</a>
             </div>
         </div>
     </nav>
 </header>
 <footer th:fragment="footer" class="footer">
-    <div class="container footer-grid"><div><a class="brand brand-light" th:href="@{/}"><span>FRIO</span> POLAR</a><p>Instalación • Mantenimiento • Reparación de Aire Acondicionado</p></div>
-        <div class="footer-links"><a th:href="@{/}">Inicio</a><a th:href="@{/#servicios}">Servicios</a><a th:href="@{/trabajos}">Trabajos</a><a th:href="@{/#contacto}">Contacto</a><a href="https://instagram.com/friopolar" target="_blank">Instagram</a></div></div>
-    <div class="container copyright">© <span id="year">2026</span> FRIO POLAR. Todos los derechos reservados.</div>
-    <a class="whatsapp-float" href="https://wa.me/5491100000000?text=Hola%20FRIO%20POLAR,%20quiero%20hacer%20una%20consulta" target="_blank" aria-label="Contactar por WhatsApp">✆</a>
-    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+    <div class="container footer-grid"><div><a class="brand-logo brand-logo--footer" th:href="@{/}" aria-label="CLIMA POLAR Refrigeración - Inicio"><img th:src="@{/img/logo-clima-polar.jpeg}" width="827" height="422" alt="CLIMA POLAR Refrigeración"></a><p>Preinstalaciones • Equipos Split • Sistemas por conductos</p></div>
+        <div class="footer-links"><a th:href="@{/}">Inicio</a><a th:href="@{/#servicios}">Servicios</a><a th:href="@{/trabajos}">Trabajos</a><a th:href="@{/#contacto}">Contacto</a><a href="mailto:climapolarbsas@gmail.com">climapolarbsas@gmail.com</a><a class="footer-admin-link" th:href="@{/admin/login}" sec:authorize="!isAuthenticated()">Acceso administrador</a><a class="footer-admin-link" th:href="@{/admin/trabajos}" sec:authorize="hasRole('ADMIN')">Panel administrador</a></div></div>
+    <div class="container copyright">© <span data-current-year>2026</span> CLIMA POLAR. Todos los derechos reservados.</div>
+    <a class="whatsapp-float" href="https://wa.me/5491169817333?text=Hola%20CLIMA%20POLAR,%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp al +54 9 11 6981 7333">✆</a>
+    <script th:src="@{/js/site.js(v='20260817')}" defer></script>
 </footer>
 </body></html>
