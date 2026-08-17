@@ -22,12 +22,20 @@ Con Docker Desktop iniciado, ejecutar:
 docker compose up --build -d
 ```
 
-Si se está actualizando una instalación que ya tenía volumen PostgreSQL, antes
-de recrear la aplicación ejecutar una vez:
+Si se está actualizando una instalación que ya tenía volumen PostgreSQL, crear
+primero un respaldo, definir el nuevo `DB_PASSWORD` en `.env` y ejecutar una
+vez:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\apply-db-least-privilege.ps1
 ```
+
+El script recrea solamente el contenedor PostgreSQL para cargar el `.env`
+actual, asigna esa contraseña a `climapolar_app` y comprueba por TCP que la
+credencial funciona sin imprimirla. Después se puede recrear la aplicación con
+`docker compose up --build -d app`. Durante el primer arranque, Flyway prepara
+las tablas de medios y configuración que no existían en el esquema legacy y
+recién entonces aplica V2; los checksums publicados de V1 y V2 no cambian.
 
 Abrir `http://localhost:8081`. El portfolio está en `/trabajos` y el panel
 privado en `/admin/trabajos`.
@@ -52,10 +60,12 @@ APP_BIND_ADDRESS=127.0.0.1
 ```
 
 El firewall debe bloquear el acceso externo a `8081`. El proxy público debe
-redirigir HTTP a HTTPS y enviar `X-Forwarded-Proto`. Antes de entregar, rotar
-la contraseña administrativa y no compartirla por chat o correo sin cifrar.
-Si el proxy se ejecuta en otro contenedor, agregar únicamente su IP o subred a
-`CLIMAPOLAR_SECURITY_TRUSTED_PROXIES`; no usar `0.0.0.0/0`.
+redirigir HTTP a HTTPS y enviar `X-Forwarded-For` y `X-Forwarded-Proto`. Antes
+de entregar, rotar la contraseña administrativa y no compartirla por chat o
+correo sin cifrar. Si el proxy se ejecuta en otro contenedor, agregar únicamente
+la IP o subred del salto inmediato a `CLIMAPOLAR_SECURITY_TRUSTED_PROXIES`; no
+usar `0.0.0.0/0`. La zona horaria predeterminada se controla con
+`TZ=America/Argentina/Buenos_Aires`.
 
 Para generar una clave criptográficamente aleatoria dentro de `.env`, sin
 mostrarla en la consola, ejecutar:
@@ -88,6 +98,14 @@ Requiere Java 17, Maven 3.9+ y PostgreSQL. Crear la base `frio_polar`, ajustar
 ejecutar `mvn spring-boot:run`.
 
 ## Verificación antes de entregar
+
+El upgrade desde el esquema de la primera versión se puede probar sin tocar los
+volúmenes del proyecto. El siguiente script levanta un PostgreSQL efímero y lo
+elimina al terminar:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\test-legacy-upgrade.ps1
+```
 
 ```bash
 docker compose build --no-cache app

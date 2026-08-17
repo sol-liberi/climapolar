@@ -30,6 +30,8 @@ public class TrabajoService {
     private static final int MAX_VIDEOS = 6;
     private static final int MAX_MEDIOS = 24;
     private static final long MAX_OFFSET_PAGINACION = 100_000L;
+    private static final String MENSAJE_CONFLICTO_AL_ELIMINAR =
+            "Este trabajo fue modificado por otra sesión. Recargá la lista antes de eliminarlo.";
 
     private final TrabajoRepository repository;
     private final MediaStorageService storage;
@@ -135,11 +137,20 @@ public class TrabajoService {
     }
 
     @Transactional
-    public void eliminar(Long id) {
+    public void eliminar(Long id, Long version) {
         Trabajo trabajo = buscarPorId(id);
+        if (version == null || version != trabajo.getVersion()) {
+            throw new MediaStorageException(MENSAJE_CONFLICTO_AL_ELIMINAR);
+        }
+
         List<TrabajoMedia> medios = List.copyOf(trabajo.getMedios());
-        repository.delete(trabajo);
-        registrarBorradoDespuesDelCommit(medios);
+        try {
+            repository.delete(trabajo);
+            repository.flush();
+            registrarBorradoDespuesDelCommit(medios);
+        } catch (OptimisticLockingFailureException ex) {
+            throw new MediaStorageException(MENSAJE_CONFLICTO_AL_ELIMINAR, ex);
+        }
     }
 
     private void mapearCampos(TrabajoForm form, Trabajo trabajo) {

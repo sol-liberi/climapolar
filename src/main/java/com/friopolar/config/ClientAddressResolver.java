@@ -3,6 +3,8 @@ package com.friopolar.config;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -82,16 +84,35 @@ public final class ClientAddressResolver {
         if (normalized.startsWith("[") && normalized.endsWith("]")) {
             normalized = normalized.substring(1, normalized.length() - 1);
         }
-        return normalized;
+        InetAddress parsed = parseIpLiteral(normalized);
+        return parsed == null ? normalized : parsed.getHostAddress();
     }
 
     private boolean isIpLiteral(String value) {
-        if (value == null || value.isBlank() || value.length() > 45) {
-            return false;
+        return parseIpLiteral(value) != null;
+    }
+
+    private InetAddress parseIpLiteral(String value) {
+        if (value == null || value.isBlank() || value.length() > 45) return null;
+
+        boolean ipv6 = value.indexOf(':') >= 0;
+        if (ipv6) {
+            // El filtro previo evita que InetAddress intente resolver un hostname.
+            // Los identificadores de zona no forman parte de X-Forwarded-For y se
+            // rechazan para que una misma IP no tenga múltiples claves de límite.
+            if (!value.matches("[0-9a-fA-F:.]+")) return null;
+        } else if (!isValidIpv4(value)) {
+            return null;
         }
-        if (value.indexOf(':') >= 0) {
-            return value.matches("[0-9a-fA-F:.%]+") && !value.contains(":::");
+
+        try {
+            return InetAddress.getByName(value);
+        } catch (UnknownHostException | IllegalArgumentException ignored) {
+            return null;
         }
+    }
+
+    private boolean isValidIpv4(String value) {
         String[] octets = value.split("\\.", -1);
         if (octets.length != 4) {
             return false;

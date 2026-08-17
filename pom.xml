@@ -20,6 +20,7 @@
         <postgresql.version>42.7.12</postgresql.version>
         <jackson-bom.version>3.1.5</jackson-bom.version>
         <log4j2.version>2.25.5</log4j2.version>
+        <tomcat.version>11.0.24</tomcat.version>
         <webjars-bootstrap.version>5.3.8</webjars-bootstrap.version>
     </properties>
     <dependencies>

@@ -3,6 +3,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$curlCommand = Get-Command curl.exe -ErrorAction SilentlyContinue
+if (-not $curlCommand) { $curlCommand = Get-Command curl -ErrorAction Stop }
 
 function Assert-Status {
     param(
@@ -10,7 +12,8 @@ function Assert-Status {
         [int[]]$Expected
     )
 
-    $statusText = & curl.exe --silent --show-error --output NUL --write-out "%{http_code}" "$BaseUrl$Path"
+    $nullDevice = if ($env:OS -eq "Windows_NT") { "NUL" } else { "/dev/null" }
+    $statusText = & $curlCommand.Source --silent --show-error --output $nullDevice --write-out "%{http_code}" "$BaseUrl$Path"
     if ($LASTEXITCODE -ne 0) { throw "No se pudo consultar $Path" }
     $status = [int]$statusText
     if ($status -notin $Expected) {
@@ -27,7 +30,7 @@ Assert-Status -Path "/no-existe" -Expected 404
 Assert-Status -Path "/admin/trabajos" -Expected 302
 Assert-Status -Path "/css/styles.css" -Expected 200
 
-$headers = & curl.exe --silent --show-error --head "$BaseUrl/"
+$headers = & $curlCommand.Source --silent --show-error --head "$BaseUrl/"
 foreach ($requiredHeader in @("X-Content-Type-Options:", "X-Frame-Options:", "Content-Security-Policy:", "Referrer-Policy:")) {
     if (-not ($headers | Select-String -SimpleMatch $requiredHeader)) {
         throw "Falta el header de seguridad $requiredHeader"

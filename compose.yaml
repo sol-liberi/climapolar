@@ -7,6 +7,7 @@ services:
       POSTGRES_DB: frio_polar
       POSTGRES_USER: frio_polar
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Defini DB_PASSWORD en el archivo .env}
+      TZ: ${TZ:-America/Argentina/Buenos_Aires}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
@@ -41,6 +42,7 @@ services:
       CLIMAPOLAR_SECURITY_TRUSTED_PROXIES: ${CLIMAPOLAR_SECURITY_TRUSTED_PROXIES:-127.0.0.1,::1}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       UPLOAD_DIR: /app/data/media
+      TZ: ${TZ:-America/Argentina/Buenos_Aires}
       JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError}
     ports:
       - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8081}:8080"

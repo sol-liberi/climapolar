@@ -21,6 +21,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -45,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({HomeController.class, AdminAuthController.class, TrabajoController.class, AdminTrabajoController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, MediaWebConfig.class})
 @TestPropertySource(properties = {
         "climapolar.admin.username=admin-test",
         "climapolar.admin.password=clave-segura-de-prueba",
@@ -91,6 +93,34 @@ class SecurityConfigTest {
         mvc.perform(get("/"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", containsString("no-cache")));
+    }
+
+    @Test
+    void publicaSoloLosSubdirectoriosDeImagenesYVideos() throws Exception {
+        Path raiz = Path.of("target/test-media").toAbsolutePath().normalize();
+        Path archivoRaiz = raiz.resolve("no-publicar.txt");
+        Path imagen = raiz.resolve("images/prueba-publica.txt");
+        Path video = raiz.resolve("videos/prueba-publica.txt");
+        Files.createDirectories(imagen.getParent());
+        Files.createDirectories(video.getParent());
+        Files.writeString(archivoRaiz, "privado");
+        Files.writeString(imagen, "imagen");
+        Files.writeString(video, "video");
+
+        try {
+            mvc.perform(get("/media/no-publicar.txt"))
+                    .andExpect(status().isNotFound());
+            mvc.perform(get("/media/images/prueba-publica.txt"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string("imagen"));
+            mvc.perform(get("/media/videos/prueba-publica.txt"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string("video"));
+        } finally {
+            Files.deleteIfExists(archivoRaiz);
+            Files.deleteIfExists(imagen);
+            Files.deleteIfExists(video);
+        }
     }
 
     @Test

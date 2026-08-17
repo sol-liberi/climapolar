@@ -7,9 +7,12 @@ import com.friopolar.model.TrabajoMedia;
 import com.friopolar.repository.TrabajoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -18,6 +21,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -25,12 +29,14 @@ import static org.mockito.Mockito.when;
 
 class TrabajoServiceTest {
     private TrabajoRepository repository;
+    private MediaStorageService storage;
     private TrabajoService service;
 
     @BeforeEach
     void preparar() {
         repository = mock(TrabajoRepository.class);
-        service = new TrabajoService(repository, mock(MediaStorageService.class));
+        storage = mock(MediaStorageService.class);
+        service = new TrabajoService(repository, storage);
     }
 
     @Test
@@ -90,6 +96,83 @@ class TrabajoServiceTest {
                 .isInstanceOf(MediaStorageException.class)
                 .hasMessageContaining("categoría seleccionada no es válida");
         verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void rechazaEliminacionConVersionObsoletaSinBorrarNada() {
+        Trabajo trabajo = trabajoExistente();
+        trabajo.setVersion(4);
+        when(repository.buscarPorIdConMedios(10L)).thenReturn(Optional.of(trabajo));
+
+        assertThatThrownBy(() -> service.eliminar(10L, 3L))
+                .isInstanceOf(MediaStorageException.class)
+                .hasMessageContaining("modificado por otra sesión");
+
+        verify(repository, never()).delete(any());
+        verify(repository, never()).flush();
+        verify(storage, never()).eliminar(any());
+    }
+
+    @Test
+    void fuerzaElFlushAlEliminarYNoBorraMediosSiLaTransaccionRevierte() {
+        Trabajo trabajo = trabajoExistente();
+        trabajo.setVersion(4);
+        when(repository.buscarPorIdConMedios(10L)).thenReturn(Optional.of(trabajo));
+        TransactionSynchronizationManager.initSynchronization();
+
+        try {
+            service.eliminar(10L, 4L);
+
+            verify(repository).delete(trabajo);
+            verify(repository).flush();
+            assertThat(TransactionSynchronizationManager.getSynchronizations()).hasSize(1);
+
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(synchronization -> synchronization.afterCompletion(
+                            TransactionSynchronization.STATUS_ROLLED_BACK
+                    ));
+            verify(storage, never()).eliminar(any());
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void borraLosMediosSoloDespuesDelCommitDeLaEliminacion() {
+        Trabajo trabajo = trabajoExistente();
+        trabajo.setVersion(4);
+        TrabajoMedia medio = trabajo.getMedios().get(0);
+        when(repository.buscarPorIdConMedios(10L)).thenReturn(Optional.of(trabajo));
+        TransactionSynchronizationManager.initSynchronization();
+
+        try {
+            service.eliminar(10L, 4L);
+
+            verify(storage, never()).eliminar(any());
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(TransactionSynchronization::afterCommit);
+            verify(storage).eliminar(medio);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void traduceConflictoDetectadoPorElFlushSinBorrarMedios() {
+        Trabajo trabajo = trabajoExistente();
+        trabajo.setVersion(4);
+        when(repository.buscarPorIdConMedios(10L)).thenReturn(Optional.of(trabajo));
+        doThrow(new OptimisticLockingFailureException("conflicto"))
+                .when(repository).flush();
+
+        assertThatThrownBy(() -> service.eliminar(10L, 4L))
+                .isInstanceOf(MediaStorageException.class)
+                .hasMessageContaining("modificado por otra sesión")
+                .hasCauseInstanceOf(OptimisticLockingFailureException.class);
+
+        verify(repository).delete(trabajo);
+        verify(repository).flush();
+        verify(storage, never()).eliminar(any());
     }
 
     private void assertBadRequest(Runnable llamada) {

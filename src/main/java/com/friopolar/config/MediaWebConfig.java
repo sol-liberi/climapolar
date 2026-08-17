@@ -5,6 +5,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
 import java.time.Duration;
 
 @Configuration
@@ -17,9 +18,15 @@ public class MediaWebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String ubicacion = properties.getUploadDir().toAbsolutePath().normalize().toUri().toString();
+        Path raiz = properties.getUploadDir().toAbsolutePath().normalize();
+        registrarDirectorio(registry, "/media/images/**", raiz.resolve("images"));
+        registrarDirectorio(registry, "/media/videos/**", raiz.resolve("videos"));
+    }
+
+    private void registrarDirectorio(ResourceHandlerRegistry registry, String patron, Path directorio) {
+        String ubicacion = directorio.normalize().toUri().toString();
         if (!ubicacion.endsWith("/")) ubicacion += "/";
-        registry.addResourceHandler("/media/**")
+        registry.addResourceHandler(patron)
                 .addResourceLocations(ubicacion)
                 .setCacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic());
     }

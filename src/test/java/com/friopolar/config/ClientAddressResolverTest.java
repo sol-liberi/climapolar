@@ -29,6 +29,21 @@ class ClientAddressResolverTest {
         assertEquals("127.0.0.1", resolver.resolve(request));
     }
 
+    @Test
+    void rechazaUnaPseudoDireccionIpv6() {
+        var request = request("127.0.0.1", ":");
+
+        assertEquals("127.0.0.1", resolver.resolve(request));
+    }
+
+    @Test
+    void normalizaRepresentacionesEquivalentesDeIpv6() {
+        String expandida = resolver.resolve(request("127.0.0.1", "2001:0db8:0:0:0:0:0:1"));
+        String abreviada = resolver.resolve(request("127.0.0.1", "2001:db8::1"));
+
+        assertEquals(expandida, abreviada);
+    }
+
     private MockHttpServletRequest request(String remoteAddress, String forwardedFor) {
         var request = new MockHttpServletRequest();
         request.setRemoteAddr(remoteAddress);

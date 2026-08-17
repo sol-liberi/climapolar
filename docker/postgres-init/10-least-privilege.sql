@@ -1,9 +1,14 @@
 -- Keep the application connection isolated from cluster-wide superuser
--- privileges. Copy the initial SCRAM verifier to a non-superuser owner and
--- then remove network-password authentication from the bootstrap superuser.
+-- privileges. Read the desired application password from the current
+-- container environment instead of copying a verifier from an old volume.
+\getenv app_password POSTGRES_PASSWORD
+\if :{?app_password}
+\else
+    \echo 'POSTGRES_PASSWORD no está disponible; no se modificaron los roles.'
+    \quit 3
+\endif
+
 DO $$
-DECLARE
-    bootstrap_verifier TEXT;
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'postgres') THEN
         CREATE ROLE postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN;
@@ -12,19 +17,12 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'climapolar_app') THEN
         CREATE ROLE climapolar_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
     END IF;
-
-    SELECT rolpassword INTO bootstrap_verifier
-      FROM pg_authid
-     WHERE rolname = 'frio_polar';
-
-    IF bootstrap_verifier IS NOT NULL THEN
-        EXECUTE format(
-            'ALTER ROLE climapolar_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD %L',
-            bootstrap_verifier
-        );
-    END IF;
 END
 $$;
+
+ALTER ROLE climapolar_app
+    WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION
+    PASSWORD :'app_password';
 
 ALTER ROLE postgres PASSWORD NULL;
 ALTER DATABASE frio_polar OWNER TO climapolar_app;

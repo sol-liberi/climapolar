@@ -11,8 +11,9 @@ RUN groupadd --system --gid 10001 climapolar \
     && useradd --system --uid 10001 --gid 10001 --home-dir /app --shell /usr/sbin/nologin climapolar \
     && rm -f /usr/bin/pebble \
     && mkdir -p /app/data/media \
-    && chown -R 10001:10001 /app
-COPY --from=build --chown=10001:10001 /app/target/frio-polar-0.0.1-SNAPSHOT.jar app.jar
+    && chown -R 10001:10001 /app/data/media
+COPY --from=build --chown=0:0 /app/target/frio-polar-0.0.1-SNAPSHOT.jar app.jar
+RUN chmod 0444 /app/app.jar
 USER 10001:10001
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

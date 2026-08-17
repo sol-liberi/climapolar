@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Arrays;
@@ -82,9 +83,17 @@ public class AdminTrabajoController {
     }
 
     @PostMapping("/eliminar/{id}")
-    public String eliminar(@PathVariable Long id, RedirectAttributes redirect) {
-        service.eliminar(id);
-        redirect.addFlashAttribute("mensaje", "Trabajo eliminado.");
+    public String eliminar(
+            @PathVariable Long id,
+            @RequestParam Long version,
+            RedirectAttributes redirect
+    ) {
+        try {
+            service.eliminar(id, version);
+            redirect.addFlashAttribute("mensaje", "Trabajo eliminado.");
+        } catch (MediaStorageException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/admin/trabajos";
     }
 
