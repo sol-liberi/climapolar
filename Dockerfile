@@ -5,7 +5,7 @@ RUN mvn -B dependency:go-offline
 COPY src ./src
 RUN mvn -B clean verify
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 RUN groupadd --system --gid 10001 climapolar \
     && useradd --system --uid 10001 --gid 10001 --home-dir /app --shell /usr/sbin/nologin climapolar \
