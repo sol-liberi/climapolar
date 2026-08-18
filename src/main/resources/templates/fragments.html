@@ -22,7 +22,10 @@
 <footer th:fragment="footer" class="footer">
     <div class="container footer-grid"><div><a class="brand-logo brand-logo--footer" th:href="@{/}" aria-label="CLIMA POLAR Refrigeración - Inicio"><img th:src="@{/img/logo-clima-polar.jpeg}" width="827" height="422" alt="CLIMA POLAR Refrigeración"></a><p>Preinstalaciones • Equipos Split • Sistemas por conductos</p></div>
         <div class="footer-links"><a th:href="@{/}">Inicio</a><a th:href="@{/#servicios}">Servicios</a><a th:href="@{/trabajos}">Trabajos</a><a th:href="@{/#contacto}">Contacto</a><a href="mailto:climapolarbsas@gmail.com">climapolarbsas@gmail.com</a><a class="footer-admin-link" th:href="@{/admin/login}" sec:authorize="!isAuthenticated()">Acceso administrador</a><a class="footer-admin-link" th:href="@{/admin/trabajos}" sec:authorize="hasRole('ADMIN')">Panel administrador</a></div></div>
-    <div class="container copyright">© <span data-current-year>2026</span> CLIMA POLAR. Todos los derechos reservados.</div>
+    <div class="container copyright">
+        <span>© <span data-current-year>2026</span> CLIMA POLAR. Todos los derechos reservados.</span>
+        <span class="footer-credit">Diseñada por <a class="footer-credit-link" href="https://neodevs-digital.tomasliberi.chatgpt.site/" target="_blank" rel="noopener noreferrer">NeoDevs</a></span>
+    </div>
     <a class="whatsapp-float" href="https://wa.me/5491169817333?text=Hola%20CLIMA%20POLAR,%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp al +54 9 11 6981 7333">✆</a>
     <script th:src="@{/js/site.js(v='20260817')}" defer></script>
 </footer>

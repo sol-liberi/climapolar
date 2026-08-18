@@ -6,6 +6,7 @@ import com.friopolar.service.MediaStorageException;
 import com.friopolar.service.TrabajoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -18,6 +19,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -86,6 +88,29 @@ class AdminTrabajoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("alert alert-danger")))
                 .andExpect(content().string(containsString(mensaje)));
+    }
+
+    @Test
+    void muestraConflictoDetectadoAlConfirmarUnaEdicion() throws Exception {
+        Trabajo trabajo = trabajoDePrueba();
+        when(service.buscarPorId(7L)).thenReturn(trabajo);
+        doThrow(new ObjectOptimisticLockingFailureException(Trabajo.class, 7L))
+                .when(service).guardar(any());
+
+        mvc.perform(post("/admin/trabajos/guardar")
+                        .param("id", "7")
+                        .param("version", "6")
+                        .param("titulo", "Trabajo con versión")
+                        .param("descripcion", "Descripción")
+                        .param("categoria", "conductos")
+                        .param("ubicacion", "")
+                        .param("fecha", "2026-08-17"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(
+                        "Este trabajo fue modificado por otra sesión. Recargá la página antes de guardar tus cambios."
+                )));
+
+        verify(service).buscarPorId(7L);
     }
 
     private Trabajo trabajoDePrueba() {

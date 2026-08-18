@@ -574,7 +574,10 @@ public class MediaStorageService {
                 contienePistas = !tamano.desconocido() && tamano.valor() > 0;
             }
             if (id.valor() == 0x1F43B675L) {
-                return contienePistas && (tamano.desconocido() || tamano.valor() > 0);
+                long bytesDisponibles = finSegmento - tamano.siguiente();
+                if (!contienePistas || bytesDisponibles <= 0) return false;
+                return tamano.desconocido()
+                        || (tamano.valor() > 0 && tamano.valor() <= bytesDisponibles);
             }
             if (tamano.desconocido()) return false;
             long siguiente = (long) tamano.siguiente() + tamano.valor();

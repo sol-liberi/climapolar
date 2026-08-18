@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -29,6 +31,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.allOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -41,6 +44,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -85,7 +90,7 @@ class SecurityConfigTest {
 
     @Test
     void permiteCacheCortaDeEstaticosSinAplicarlaAlHtml() throws Exception {
-        mvc.perform(get("/css/styles.css?v=20260817"))
+        mvc.perform(get("/css/styles.css?v=20260818"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", containsString("max-age=3600")))
                 .andExpect(header().string("Cache-Control", not(containsString("no-store"))));
@@ -130,10 +135,52 @@ class SecurityConfigTest {
     }
 
     @Test
+    void rechazaMultipartAdministrativoAntesDeLlegarAlControlador() throws Exception {
+        var contenido = new MockMultipartFile(
+                "videos", "grande.mp4", "video/mp4", new byte[]{1, 2, 3, 4}
+        );
+
+        mvc.perform(multipart("/admin/trabajos/guardar")
+                        .file(contenido)
+                        .with(csrf()))
+                .andExpect(status().isForbidden())
+                .andExpect(header().string("Cache-Control", "no-store"));
+
+        verify(trabajoService, never()).guardar(any());
+    }
+
+    @Test
+    void rechazaMultipartAnonimoAunqueLaRutaNoExista() throws Exception {
+        var contenido = new MockMultipartFile(
+                "archivo", "grande.bin", "application/octet-stream", new byte[]{1, 2, 3, 4}
+        );
+
+        mvc.perform(multipart("/ruta-inexistente")
+                        .file(contenido)
+                        .with(csrf()))
+                .andExpect(status().isForbidden())
+                .andExpect(header().string("Cache-Control", "no-store"));
+    }
+
+    @Test
+    void loginSoloAceptaFormularioUrlEncoded() throws Exception {
+        var contenido = new MockMultipartFile(
+                "archivo", "contenido.bin", "application/octet-stream", new byte[]{1}
+        );
+
+        mvc.perform(multipart("/admin/login")
+                        .file(contenido)
+                        .with(csrf()))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(header().string("Cache-Control", "no-store"));
+    }
+
+    @Test
     void autenticaAlAdministradorYRenuevaLaSesion() throws Exception {
         var sesionAnterior = new MockHttpSession(null, "session-conocida");
 
         var resultado = mvc.perform(post("/admin/login")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .session(sesionAnterior)
                         .with(csrf())
                         .param("username", "admin-test")
@@ -151,6 +198,7 @@ class SecurityConfigTest {
         String clientAddress = "198.51.100.41";
         for (int attempt = 0; attempt < LoginAttemptLimiter.COMBINATION_LIMIT; attempt++) {
             mvc.perform(post("/admin/login")
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                             .with(csrf())
                             .with(remoteAddress(clientAddress))
                             .param("username", "admin-test")
@@ -160,6 +208,7 @@ class SecurityConfigTest {
         }
 
         mvc.perform(post("/admin/login")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .with(csrf())
                         .with(remoteAddress(clientAddress))
                         .param("username", "admin-test")
@@ -177,6 +226,7 @@ class SecurityConfigTest {
         }
 
         mvc.perform(post("/admin/login")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .with(csrf())
                         .with(remoteAddress(clientAddress))
                         .param("username", "admin-test")
@@ -196,6 +246,7 @@ class SecurityConfigTest {
         String directAddress = "198.51.100.43";
         for (int attempt = 0; attempt < LoginAttemptLimiter.COMBINATION_LIMIT; attempt++) {
             mvc.perform(post("/admin/login")
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                             .with(csrf())
                             .with(remoteAddress(directAddress))
                             .header("X-Forwarded-For", "203.0.113." + (attempt + 1))
@@ -205,6 +256,7 @@ class SecurityConfigTest {
         }
 
         mvc.perform(post("/admin/login")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .with(csrf())
                         .with(remoteAddress(directAddress))
                         .header("X-Forwarded-For", "203.0.113.99")
@@ -323,6 +375,7 @@ class SecurityConfigTest {
 
     private void intentoFallido(String clientAddress) throws Exception {
         mvc.perform(post("/admin/login")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .with(csrf())
                         .with(remoteAddress(clientAddress))
                         .param("username", "admin-test")

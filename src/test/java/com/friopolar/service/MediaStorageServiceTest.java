@@ -112,6 +112,20 @@ class MediaStorageServiceTest {
     }
 
     @Test
+    void rechazaWebmConClusterTruncado() {
+        var archivo = new MockMultipartFile(
+                "videos",
+                "truncado.webm",
+                "video/webm",
+                webmConClusterTruncado()
+        );
+
+        assertThatThrownBy(() -> storage.guardarVideo(archivo, 0))
+                .isInstanceOf(MediaStorageException.class)
+                .hasMessageContaining("MP4 o WebM");
+    }
+
+    @Test
     void reconciliaSoloArchivosGestionadosHuerfanosYAntiguos() throws Exception {
         Path imagenes = temporal.resolve("images");
         Path huerfana = imagenes.resolve("00000000-0000-0000-0000-000000000001.jpg");
@@ -248,6 +262,16 @@ class MediaStorageServiceTest {
                 0x18, 0x53, (byte) 0x80, 0x67, (byte) 0x8C,
                 0x16, 0x54, (byte) 0xAE, 0x6B, (byte) 0x81, 0x01,
                 0x1F, 0x43, (byte) 0xB6, 0x75, (byte) 0x81, 0x01
+        };
+    }
+
+    private byte[] webmConClusterTruncado() {
+        return new byte[]{
+                0x1A, 0x45, (byte) 0xDF, (byte) 0xA3, (byte) 0x87,
+                0x42, (byte) 0x82, (byte) 0x84, 'w', 'e', 'b', 'm',
+                0x18, 0x53, (byte) 0x80, 0x67, (byte) 0xFF,
+                0x16, 0x54, (byte) 0xAE, 0x6B, (byte) 0x81, 0x01,
+                0x1F, 0x43, (byte) 0xB6, 0x75, (byte) 0x81
         };
     }
 

@@ -62,10 +62,12 @@ APP_BIND_ADDRESS=127.0.0.1
 El firewall debe bloquear el acceso externo a `8081`. El proxy público debe
 redirigir HTTP a HTTPS y enviar `X-Forwarded-For` y `X-Forwarded-Proto`. Antes
 de entregar, rotar la contraseña administrativa y no compartirla por chat o
-correo sin cifrar. Si el proxy se ejecuta en otro contenedor, agregar únicamente
-la IP o subred del salto inmediato a `CLIMAPOLAR_SECURITY_TRUSTED_PROXIES`; no
-usar `0.0.0.0/0`. La zona horaria predeterminada se controla con
-`TZ=America/Argentina/Buenos_Aires`.
+correo sin cifrar. Configurar siempre en `CLIMAPOLAR_SECURITY_TRUSTED_PROXIES`
+la IP o subred exacta del salto inmediato que la aplicación observa en producción,
+incluso si el proxy corre en el host; no asumir que será `127.0.0.1` ni usar
+`0.0.0.0/0`. Verificar después que HSTS esté presente por HTTPS y que los intentos
+de acceso registren la IP real del cliente. La zona horaria predeterminada se
+controla con `TZ=America/Argentina/Buenos_Aires`.
 
 Para generar una clave criptográficamente aleatoria dentro de `.env`, sin
 mostrarla en la consola, ejecutar:
@@ -87,7 +89,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\backup.ps1
 ```
 
 El script guarda un dump verificable y los archivos dentro de `backups/`, que
-está excluido de Git. Copiar esa carpeta además a un almacenamiento externo.
+está excluido de Git. Para mantener consistentes la base y los medios, pausa
+automáticamente el contenedor de la aplicación durante la copia y lo reanuda al
+terminar, incluso si ocurre un error. Copiar esa carpeta además a un
+almacenamiento externo.
 Probar periódicamente una restauración en un entorno separado antes de depender
 del respaldo en producción.
 

@@ -8,6 +8,9 @@ import com.friopolar.model.CategoriaTrabajo;
 import com.friopolar.model.Trabajo;
 import com.friopolar.model.TrabajoMedia;
 import com.friopolar.repository.TrabajoRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -30,15 +33,19 @@ public class TrabajoService {
     private static final int MAX_VIDEOS = 6;
     private static final int MAX_MEDIOS = 24;
     private static final long MAX_OFFSET_PAGINACION = 100_000L;
+    private static final String MENSAJE_CONFLICTO_AL_GUARDAR =
+            "Este trabajo fue modificado por otra sesión. Recargá la página antes de guardar tus cambios.";
     private static final String MENSAJE_CONFLICTO_AL_ELIMINAR =
             "Este trabajo fue modificado por otra sesión. Recargá la lista antes de eliminarlo.";
 
     private final TrabajoRepository repository;
     private final MediaStorageService storage;
+    private final EntityManager entityManager;
 
-    public TrabajoService(TrabajoRepository repository, MediaStorageService storage) {
+    public TrabajoService(TrabajoRepository repository, MediaStorageService storage, EntityManager entityManager) {
         this.repository = repository;
         this.storage = storage;
+        this.entityManager = entityManager;
     }
 
     @Transactional(readOnly = true)
@@ -101,6 +108,7 @@ public class TrabajoService {
         validarCantidad(conservados, imagenes.size(), videos.size());
 
         mapearCampos(form, trabajo);
+        forzarIncrementoDeVersionSiEsEdicion(form, trabajo);
         List<TrabajoMedia> nuevos = new ArrayList<>();
         List<TrabajoMedia> eliminados = trabajo.getMedios().stream()
                 .filter(medio -> medio.getId() != null && idsAEliminar.contains(medio.getId()))
@@ -126,10 +134,7 @@ public class TrabajoService {
             return guardado;
         } catch (OptimisticLockingFailureException ex) {
             nuevos.forEach(storage::eliminar);
-            throw new MediaStorageException(
-                    "Este trabajo fue modificado por otra sesión. Recargá la página antes de guardar tus cambios.",
-                    ex
-            );
+            throw new MediaStorageException(MENSAJE_CONFLICTO_AL_GUARDAR, ex);
         } catch (RuntimeException ex) {
             nuevos.forEach(storage::eliminar);
             throw ex;
@@ -167,11 +172,21 @@ public class TrabajoService {
     private Trabajo buscarParaEditar(TrabajoForm form) {
         Trabajo trabajo = buscarPorId(form.getId());
         if (form.getVersion() == null || form.getVersion() != trabajo.getVersion()) {
-            throw new MediaStorageException(
-                    "Este trabajo fue modificado por otra sesión. Recargá la página antes de guardar tus cambios."
-            );
+            throw new MediaStorageException(MENSAJE_CONFLICTO_AL_GUARDAR);
         }
         return trabajo;
+    }
+
+    private void forzarIncrementoDeVersionSiEsEdicion(TrabajoForm form, Trabajo trabajo) {
+        if (form.getId() == null) return;
+        try {
+            // El lado inverso de la colección no ensucia necesariamente al padre.
+            // Este bloqueo garantiza que también una edición exclusivamente
+            // multimedia incremente la versión al confirmar la transacción.
+            entityManager.lock(trabajo, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+        } catch (OptimisticLockException | OptimisticLockingFailureException ex) {
+            throw new MediaStorageException(MENSAJE_CONFLICTO_AL_GUARDAR, ex);
+        }
     }
 
     private void validarIdsDeMedios(Trabajo trabajo, Set<Long> idsAEliminar) {

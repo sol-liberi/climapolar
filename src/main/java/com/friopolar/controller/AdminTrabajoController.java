@@ -6,6 +6,7 @@ import com.friopolar.service.MediaStorageException;
 import com.friopolar.service.TrabajoService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,9 @@ import java.util.List;
 @Controller
 @RequestMapping("/admin/trabajos")
 public class AdminTrabajoController {
+    private static final String MENSAJE_CONFLICTO_AL_GUARDAR =
+            "Este trabajo fue modificado por otra sesión. Recargá la página antes de guardar tus cambios.";
+
     private final TrabajoService service;
 
     public AdminTrabajoController(TrabajoService service) {
@@ -65,6 +69,10 @@ public class AdminTrabajoController {
                 service.guardar(form);
             } catch (MediaStorageException ex) {
                 result.reject("medios", ex.getMessage());
+            } catch (OptimisticLockingFailureException ex) {
+                // El incremento forzado puede detectar el conflicto al confirmar
+                // la transacción, después de que el método del servicio retornó.
+                result.reject("concurrencia", MENSAJE_CONFLICTO_AL_GUARDAR);
             }
         }
 

@@ -12,8 +12,7 @@ RUN groupadd --system --gid 10001 climapolar \
     && rm -f /usr/bin/pebble \
     && mkdir -p /app/data/media \
     && chown -R 10001:10001 /app/data/media
-COPY --from=build --chown=0:0 /app/target/frio-polar-0.0.1-SNAPSHOT.jar app.jar
-RUN chmod 0444 /app/app.jar
+COPY --from=build --chown=0:0 --chmod=0444 /app/target/frio-polar-0.0.1-SNAPSHOT.jar app.jar
 USER 10001:10001
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

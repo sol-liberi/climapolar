@@ -15,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 import static jakarta.servlet.DispatcherType.ERROR;
@@ -89,6 +90,7 @@ public class SecurityConfig {
                                 .includeSubDomains(true)
                                 .preload(true)
                                 .maxAgeInSeconds(31_536_000)))
+                .addFilterBefore(new AdminRequestGuardFilter(), CsrfFilter.class)
                 .addFilterBefore(
                         new LoginRateLimitFilter(loginAttemptLimiter, clientAddressResolver),
                         UsernamePasswordAuthenticationFilter.class);

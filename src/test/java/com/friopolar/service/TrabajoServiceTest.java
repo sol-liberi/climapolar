@@ -5,6 +5,8 @@ import com.friopolar.model.TipoMedio;
 import com.friopolar.model.Trabajo;
 import com.friopolar.model.TrabajoMedia;
 import com.friopolar.repository.TrabajoRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -30,13 +32,15 @@ import static org.mockito.Mockito.when;
 class TrabajoServiceTest {
     private TrabajoRepository repository;
     private MediaStorageService storage;
+    private EntityManager entityManager;
     private TrabajoService service;
 
     @BeforeEach
     void preparar() {
         repository = mock(TrabajoRepository.class);
         storage = mock(MediaStorageService.class);
-        service = new TrabajoService(repository, storage);
+        entityManager = mock(EntityManager.class);
+        service = new TrabajoService(repository, storage, entityManager);
     }
 
     @Test
@@ -96,6 +100,19 @@ class TrabajoServiceTest {
                 .isInstanceOf(MediaStorageException.class)
                 .hasMessageContaining("categoría seleccionada no es válida");
         verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void fuerzaIncrementoDeVersionEnTodaEdicion() {
+        Trabajo trabajo = trabajoExistente();
+        trabajo.setVersion(4);
+        when(repository.buscarPorIdConMedios(10L)).thenReturn(Optional.of(trabajo));
+        when(repository.saveAndFlush(trabajo)).thenReturn(trabajo);
+
+        service.guardar(formularioValido(10L, 4L));
+
+        verify(entityManager).lock(trabajo, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+        verify(repository).saveAndFlush(trabajo);
     }
 
     @Test
