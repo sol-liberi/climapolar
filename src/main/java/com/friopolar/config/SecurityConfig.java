@@ -115,8 +115,8 @@ public class SecurityConfig {
 
     @Bean
     UserDetailsService userDetailsService(AdminProperties properties, PasswordEncoder encoder) {
-        var admin = User.withUsername(properties.getUsername())
-                .password(encoder.encode(properties.getPassword()))
+        var admin = User.withUsername(properties.username())
+                .password(encoder.encode(properties.password()))
                 .roles("ADMIN")
                 .build();
         return new InMemoryUserDetailsManager(admin);

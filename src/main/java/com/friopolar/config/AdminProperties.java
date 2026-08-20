@@ -7,16 +7,11 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @ConfigurationProperties(prefix = "climapolar.admin")
-public class AdminProperties {
+public record AdminProperties(
     @NotBlank(message = "Definí ADMIN_USERNAME para habilitar el panel")
-    private String username;
+    String username,
 
     @NotBlank(message = "Definí ADMIN_PASSWORD para habilitar el panel")
     @Size(min = 12, message = "ADMIN_PASSWORD debe tener al menos 12 caracteres")
-    private String password;
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    String password) {
 }

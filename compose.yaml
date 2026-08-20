@@ -26,6 +26,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - backend
 
   app:
     build:
@@ -39,7 +41,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?Defini DB_PASSWORD en el archivo .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:?Defini ADMIN_USERNAME en el archivo .env}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defini ADMIN_PASSWORD en el archivo .env}
-      CLIMAPOLAR_SECURITY_TRUSTED_PROXIES: ${CLIMAPOLAR_SECURITY_TRUSTED_PROXIES:-127.0.0.1,::1}
+      CLIMAPOLAR_SECURITY_TRUSTED_PROXIES: ${CLIMAPOLAR_SECURITY_TRUSTED_PROXIES:-127.0.0.1,::1,172.30.0.1}
+      TOMCAT_INTERNAL_PROXIES_REGEX: ${TOMCAT_INTERNAL_PROXIES_REGEX:-127[.]0[.]0[.]1|0:0:0:0:0:0:0:1|::1|172[.]30[.]0[.]1}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       UPLOAD_DIR: /app/data/media
       TZ: ${TZ:-America/Argentina/Buenos_Aires}
@@ -67,7 +70,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - backend
 
 volumes:
   postgres_data:
   media_data:
+
+networks:
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${COMPOSE_BACKEND_SUBNET:-172.30.0.0/24}
+          gateway: ${COMPOSE_BACKEND_GATEWAY:-172.30.0.1}

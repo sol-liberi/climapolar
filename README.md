@@ -48,7 +48,7 @@ docker compose down
 
 No usar `docker compose down -v`: la opción `-v` elimina la base y los medios.
 
-## Publicación con dominio
+## Producción: Cloudflare, Nginx y Docker Compose
 
 La aplicación no debe exponerse directamente a Internet. Por defecto Docker
 publica el puerto solamente en `127.0.0.1`; colocar delante un proxy HTTPS
@@ -60,14 +60,48 @@ APP_BIND_ADDRESS=127.0.0.1
 ```
 
 El firewall debe bloquear el acceso externo a `8081`. El proxy público debe
-redirigir HTTP a HTTPS y enviar `X-Forwarded-For` y `X-Forwarded-Proto`. Antes
+redirigir HTTP a HTTPS y sobrescribir `Host`, `X-Real-IP`, `X-Forwarded-For` y
+`X-Forwarded-Proto`. Antes
 de entregar, rotar la contraseña administrativa y no compartirla por chat o
 correo sin cifrar. Configurar siempre en `CLIMAPOLAR_SECURITY_TRUSTED_PROXIES`
-la IP o subred exacta del salto inmediato que la aplicación observa en producción,
-incluso si el proxy corre en el host; no asumir que será `127.0.0.1` ni usar
-`0.0.0.0/0`. Verificar después que HSTS esté presente por HTTPS y que los intentos
+la IP o subred exacta del salto inmediato que la aplicación observa en producción.
+Con la red bridge incluida en Compose, Nginx entra por `127.0.0.1:8081` y el
+contenedor observa el gateway estable `172.30.0.1`. No usar `0.0.0.0/0`.
+
+La lista CIDR `CLIMAPOLAR_SECURITY_TRUSTED_PROXIES` es utilizada por el rate
+limiting. `TOMCAT_INTERNAL_PROXIES_REGEX` es una expresión regular distinta que
+Tomcat utiliza para aceptar los forwarded headers y determinar esquema, host e
+IP remota. No copiar directamente una lista separada por comas entre ambas.
+Verificar después que HSTS esté presente por HTTPS y que los intentos
 de acceso registren la IP real del cliente. La zona horaria predeterminada se
 controla con `TZ=America/Argentina/Buenos_Aires`.
+
+Hay ejemplos para `climapolar.com.ar` y `www.climapolar.com.ar` en
+`deploy/nginx/`. Nginx debe reemplazar `X-Forwarded-For` con `$remote_addr`, no
+usar `$proxy_add_x_forwarded_for`: así un visitante no puede insertar direcciones
+arbitrarias en la cadena. Si Cloudflare está en modo Proxied, generar
+`/etc/nginx/snippets/cloudflare-real-ip.conf` con las redes oficiales vigentes de
+Cloudflare y restringir 80/443 a esas redes en el firewall. De ese modo
+`CF-Connecting-IP` solo se acepta desde un salto autenticado por su IP de origen.
+
+Variables obligatorias o relevantes del `.env` de producción:
+
+```dotenv
+DB_PASSWORD=<generar-en-el-VPS>
+ADMIN_USERNAME=<definir-para-el-cliente>
+ADMIN_PASSWORD=<generar-en-el-VPS-minimo-12-caracteres>
+SESSION_COOKIE_SECURE=true
+APP_BIND_ADDRESS=127.0.0.1
+APP_PORT=8081
+CLIMAPOLAR_SECURITY_TRUSTED_PROXIES=127.0.0.1,::1,172.30.0.1
+TOMCAT_INTERNAL_PROXIES_REGEX=127[.]0[.]0[.]1|0:0:0:0:0:0:0:1|::1|172[.]30[.]0[.]1
+COMPOSE_BACKEND_SUBNET=172.30.0.0/24
+COMPOSE_BACKEND_GATEWAY=172.30.0.1
+TZ=America/Argentina/Buenos_Aires
+```
+
+Para desarrollo HTTP local se permite cambiar solamente
+`SESSION_COOKIE_SECURE=false`. Producción debe conservarlo en `true`.
 
 Para generar una clave criptográficamente aleatoria dentro de `.env`, sin
 mostrarla en la consola, ejecutar:

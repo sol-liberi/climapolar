@@ -16,6 +16,14 @@ class ClientAddressResolverTest {
     }
 
     @Test
+    void ignoraXRealIpAunqueElSaltoSeaConfiable() {
+        var request = request("127.0.0.1", null);
+        request.addHeader("X-Real-IP", "203.0.113.10");
+
+        assertEquals("127.0.0.1", resolver.resolve(request));
+    }
+
+    @Test
     void obtieneElPrimerSaltoNoConfiableDetrasDeLosProxies() {
         var request = request("10.0.0.2", "203.0.113.10, 10.0.0.3");
 
@@ -47,7 +55,9 @@ class ClientAddressResolverTest {
     private MockHttpServletRequest request(String remoteAddress, String forwardedFor) {
         var request = new MockHttpServletRequest();
         request.setRemoteAddr(remoteAddress);
-        request.addHeader("X-Forwarded-For", forwardedFor);
+        if (forwardedFor != null) {
+            request.addHeader("X-Forwarded-For", forwardedFor);
+        }
         return request;
     }
 }
